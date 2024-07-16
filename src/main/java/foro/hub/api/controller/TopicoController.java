@@ -9,7 +9,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -20,8 +22,13 @@ public class TopicoController {
     private TopicoRepository topicoRepository;
 
     @PostMapping
-    public ResponseEntity registrarTopicos(@RequestBody @Valid DatosRegistroTopico datosRegistroTopico ) {
-        return ResponseEntity.ok(topicoRepository.save(new Topico(datosRegistroTopico)));
+    public ResponseEntity<DatosListadoTopico> registrarTopicos(@RequestBody @Valid DatosRegistroTopico datosRegistroTopico,
+                                                                UriComponentsBuilder uriComponentsBuilder) {
+        Topico topico = topicoRepository.save(new Topico(datosRegistroTopico));
+        var datosTopico = new DatosListadoTopico(topico.getTitulo(), topico.getMensaje(), topico.getFecha(),
+                                                 topico.getStatus(), topico.getAutor(), topico.getCurso());
+        URI url = uriComponentsBuilder.path("/topicos/{id}").buildAndExpand(topico.getId()).toUri();
+        return ResponseEntity.created(url).body(datosTopico);
     }
 
     @GetMapping
@@ -51,7 +58,7 @@ public class TopicoController {
     public ResponseEntity eliminarTopico(@PathVariable Long id){
         Topico topico = topicoRepository.getReferenceById(id);
         topicoRepository.deleteById(id);
-        return ResponseEntity.ok("Topico eliminado correctamente");
+        return ResponseEntity.noContent().build();
     }
 
 }
